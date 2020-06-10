@@ -5,14 +5,22 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 #include <pthread.h>
+#define MAX_ID_LENGHT 6
 
-#include "list.h"
+struct user
+{
+	int fd;
+	std::string name;
+};
 
 using namespace std;
 
-list * users;
+std::vector<user> users;
 
 void * takeClient(void * reqfd)
 {
@@ -21,15 +29,19 @@ void * takeClient(void * reqfd)
 	
 	dprintf(connection, "Enter your username:\n(at most %d character)\n", MAX_ID_LENGHT);
 	bool tried = false;
-	do {
+	user temp;
+	temp.fd = connection;
+	{
 		if (tried) dprintf(connection, "Username Exist! Please choose another one:\n");
 		int bytesRead = 0, result = 0;
 		while (0 < (result = read(connection, buff + bytesRead, MAX_ID_LENGHT - bytesRead)))
 			bytesRead += result;
 		buff[bytesRead] = '\0';
 		tried = true;
-	} while (users->insert(buff, connection));
-	dprintf(connection, "Wellcome %s there are %d online user!\npress h for help!\n", buff, users->getCount());
+		temp.name = buff;
+	}
+	users.push_back(temp);
+	dprintf(connection, "Wellcome %s there are %d online user!\npress h for help!\n", buff, users.size());
 	printf("%s connected!\n", buff);
 	while (true) {
 		char userinput[2];
@@ -43,29 +55,26 @@ void * takeClient(void * reqfd)
 		if (userinput[0] == 'n') {
 			char to[MAX_ID_LENGHT];
 			read(connection, to, MAX_ID_LENGHT);
-			int tofd = users->getConnection(to);
+			int tofd = std::find_if(begin(users), end(users), [to](auto u){ return !u.name.compare(to);})->fd;
 			char buffer[1024];
 			int bytesRead = 0;
 			while ((bytesRead = read(connection, buffer, 1024)) > 0)
 				write(tofd, buffer, bytesRead);
 		}	
 		if (userinput[0] == 'p') {
-			char * b = users->getIDs();
-			write(connection, b, users->getCount() * MAX_ID_LENGHT + users->getCount());
-			delete b;
+			for (auto & u : users)
+				write(connection, u.name.c_str(), sizeof(u.name.c_str()));
 		}
 	}
 	shutdown(connection, SHUT_RDWR);
 	close(connection);
-	users->remove(buff);
+	std::remove_if(begin(users), end(users), [&buff](auto u){ return !u.name.compare(buff); });
 	printf("%s disconnected!\n", buff);
 	return NULL;
 }
 
 int main(int argc, char * argv[])
 {
-	users = new list;
-	
 	write(1,"\E[H\E[2J",7);
 
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
