@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=--std=c++17 -c -Wall
 LDFLAGS=-O3 -lpthread
-SOURCES=main.cpp list.cpp
+SOURCES=main.cpp db.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=harf
 

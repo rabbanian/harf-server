@@ -6,31 +6,23 @@
 #include <unistd.h>
 #include <string.h>
 #include <string>
-#include <vector>
-#include <algorithm>
 
 #include <pthread.h>
 #define MAX_ID_LENGHT 6
 
-struct user
-{
-	int fd;
-	std::string name;
-};
+#include "db.h"
 
 using namespace std;
-
-std::vector<user> users;
 
 void * takeClient(void * reqfd)
 {
 	int connection = (long) reqfd;
 	char buff[MAX_ID_LENGHT + 1];
+
+	db & users = db::instance();
 	
 	dprintf(connection, "Enter your username:\n(at most %d character)\n", MAX_ID_LENGHT);
 	bool tried = false;
-	user temp;
-	temp.fd = connection;
 	{
 		if (tried) dprintf(connection, "Username Exist! Please choose another one:\n");
 		int bytesRead = 0, result = 0;
@@ -38,10 +30,9 @@ void * takeClient(void * reqfd)
 			bytesRead += result;
 		buff[bytesRead] = '\0';
 		tried = true;
-		temp.name = buff;
 	}
-	users.push_back(temp);
-	dprintf(connection, "Wellcome %s there are %d online user!\npress h for help!\n", buff, users.size());
+	users.insert(buff, connection);
+	dprintf(connection, "Wellcome %s there are %d online user!\npress h for help!\n", buff, users.count());
 	printf("%s connected!\n", buff);
 	while (true) {
 		char userinput[2];
@@ -53,22 +44,31 @@ void * takeClient(void * reqfd)
 		if (userinput[0] == 'h')
 			dprintf(connection, "n: new massage\np: print online users\nq: exit\nh: help\n");
 		if (userinput[0] == 'n') {
-			char to[MAX_ID_LENGHT];
+			char to[MAX_ID_LENGHT + 1];
+			to[MAX_ID_LENGHT] = '\0';
 			read(connection, to, MAX_ID_LENGHT);
-			int tofd = std::find_if(begin(users), end(users), [to](auto u){ return !u.name.compare(to);})->fd;
+			int tofd;
+			if (users.is_registered(to)) {
+				tofd = users.get_fd(to);
+			} else {
+				printf("name not found! (%s)\n", to);
+				continue;
+			}
 			char buffer[1024];
 			int bytesRead = 0;
 			while ((bytesRead = read(connection, buffer, 1024)) > 0)
 				write(tofd, buffer, bytesRead);
 		}	
+		/*
 		if (userinput[0] == 'p') {
 			for (auto & u : users)
 				write(connection, u.name.c_str(), sizeof(u.name.c_str()));
 		}
+		*/
 	}
 	shutdown(connection, SHUT_RDWR);
 	close(connection);
-	std::remove_if(begin(users), end(users), [&buff](auto u){ return !u.name.compare(buff); });
+	users.remove_fd(connection);
 	printf("%s disconnected!\n", buff);
 	return NULL;
 }
