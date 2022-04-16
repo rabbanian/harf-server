@@ -1,0 +1,8 @@
+# IDEs
+*.user
+.idea
+.vscode
+.vs
+CMakeSettings.json
+cpp.hint
+cmake-build-*
