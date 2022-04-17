@@ -4,6 +4,7 @@ project(Harf)
 set(CMAKE_CXX_STANDARD 17)
 
 include(cmake/prevent_in_source_builds.cmake)
-include(cmake/compiler_warnings.cmake)
+#include(cmake/compiler_warnings.cmake)
+include(cmake/external.cmake)
 
 add_subdirectory(src)

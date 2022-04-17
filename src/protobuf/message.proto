@@ -1,0 +1,6 @@
+syntax = "proto3";
+package harf;
+
+message test {
+  fixed32 id = 1;
+}
