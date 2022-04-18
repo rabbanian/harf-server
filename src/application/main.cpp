@@ -1,56 +1,54 @@
-#include <cstdio>
-#include <cstdlib>
-#include <netinet/in.h>
-#include <string.h>
-#include <string>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <pthread.h>
-#define MAX_ID_LENGHT 6
-
 #include "db/database.h"
 
-using namespace std;
+#include <iostream>
+#include <string>
+#include <thread>
+#include <cstdio>
+#include <cstring>
 
-void *takeClient(void *reqfd)
+#include <unistd.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
+#define MAX_ID_LENGHT 6
+
+void takeClient(int fd)
 {
-    int connection = (long)reqfd;
     char buff[MAX_ID_LENGHT + 1];
 
-    db &users = db::instance();
+    auto &users = db::instance();
 
-    dprintf(connection, "Enter your username:\n(at most %d character)\n", MAX_ID_LENGHT);
-    bool tried = false;
-    {
-        if (tried)
-            dprintf(connection, "Username Exist! Please choose another one:\n");
-        int bytesRead = 0, result = 0;
-        while (0 < (result = read(connection, buff + bytesRead, MAX_ID_LENGHT - bytesRead)))
-            bytesRead += result;
-        buff[bytesRead] = '\0';
-        tried = true;
-    }
-    users.insert(buff, connection);
-    dprintf(connection, "Wellcome %s there are %d online user!\npress h for help!\n", buff, users.count());
-    printf("%s connected!\n", buff);
+    std::string msg = "Enter your username:\n(exactly " + std::to_string(MAX_ID_LENGHT) + " character)\n";
+    write(fd, msg.c_str(), msg.size());
+
+    int bytesRead = 0, result = 0;
+    while (0 < (result = read(fd, buff + bytesRead, MAX_ID_LENGHT - bytesRead)))
+        bytesRead += result;
+    buff[bytesRead] = '\0';
+
+    users.insert(buff, fd);
+    dprintf(fd, "Welcome %s there are %d online user!\npress h for help!\n", buff, users.count());
+    std::cout << buff << "connected!" << std::endl;
+
     while (true)
     {
-        char userinput[2];
-        if (0 == read(connection, &userinput, 2))
+        char input[2];
+        if (0 == read(fd, &input, 2))
         {
             break;
         }
-        if (userinput[0] == 'q')
+        if (input[0] == 'q')
             break;
-        if (userinput[0] == 'h')
-            dprintf(connection, "n: new massage\np: print online users\nq: exit\nh: help\n");
-        if (userinput[0] == 'n')
+        if (input[0] == 'h')
+        {
+            msg = "n: new massage\np: print online users\nq: exit\nh: help\n";
+            write(fd, msg.c_str(), msg.size());
+        }
+        if (input[0] == 'n')
         {
             char to[MAX_ID_LENGHT + 1];
             to[MAX_ID_LENGHT] = '\0';
-            read(connection, to, MAX_ID_LENGHT);
+            read(fd, to, MAX_ID_LENGHT);
             int tofd;
             if (users.is_registered(to))
             {
@@ -58,32 +56,23 @@ void *takeClient(void *reqfd)
             }
             else
             {
-                printf("name not found! (%s)\n", to);
+                std::cout << "name not found! (" << to << ")" << std::endl;
                 continue;
             }
             char buffer[1024];
             int bytesRead = 0;
-            while ((bytesRead = read(connection, buffer, 1024)) > 0)
+            while ((bytesRead = read(fd, buffer, 1024)) > 0)
                 write(tofd, buffer, bytesRead);
         }
-        /*
-        if (userinput[0] == 'p') {
-            for (auto & u : users)
-                write(connection, u.name.c_str(), sizeof(u.name.c_str()));
-        }
-        */
     }
-    shutdown(connection, SHUT_RDWR);
-    close(connection);
-    users.remove_fd(connection);
-    printf("%s disconnected!\n", buff);
-    return NULL;
+    shutdown(fd, SHUT_RDWR);
+    close(fd);
+    users.remove_fd(fd);
+    std::cout << buff << "disconnected" << std::endl;
 }
 
 int main(int argc, char *argv[])
 {
-    write(1, "\E[H\E[2J", 7);
-
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in sockadd;
@@ -92,14 +81,17 @@ int main(int argc, char *argv[])
     sockadd.sin_port = htons(1234);
     sockadd.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    bind(sockfd, (struct sockaddr *)&sockadd, sizeof(sockadd));
-
+    if (bind(sockfd, (struct sockaddr *)&sockadd, sizeof(sockadd)) < 0)
+    {
+        std::cerr << "bind failed!" << std::endl;
+        return -1;
+    }
     listen(sockfd, 10);
+
     while (true)
     {
         int reqfd = accept(sockfd, NULL, NULL);
-        pthread_t pthid;
-        pthread_create(&pthid, NULL, takeClient, (void *)reqfd);
+        std::thread(takeClient, reqfd).detach();
     }
 
     return 0;
