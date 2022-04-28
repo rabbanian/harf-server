@@ -1,34 +1,28 @@
-#include "db/database.h"
-
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <thread>
-#include <cstdio>
-#include <cstring>
 
-#include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
-#define MAX_ID_LENGHT 6
+#include <asio.hpp>
+#include "db/database.h"
 
-void takeClient(int fd)
+void takeClient(asio::ip::tcp::socket socket)
 {
-    char buff[MAX_ID_LENGHT + 1];
-
     auto &users = db::instance();
 
-    std::string msg = "Enter your username:\n(exactly " + std::to_string(MAX_ID_LENGHT) + " character)\n";
-    write(fd, msg.c_str(), msg.size());
+    std::string msg = "Enter your username: \n";
+    socket.write_some(asio::buffer(msg));
 
-    int bytesRead = 0, result = 0;
-    while (0 < (result = read(fd, buff + bytesRead, MAX_ID_LENGHT - bytesRead)))
-        bytesRead += result;
-    buff[bytesRead] = '\0';
+    socket.read_some(asio::buffer(msg));
 
-    users.insert(buff, fd);
+    users.insert(msg, fd);
     dprintf(fd, "Welcome %s there are %d online user!\npress h for help!\n", buff, users.count());
-    std::cout << buff << "connected!" << std::endl;
+    std::cout << msg << "connected!" << std::endl;
 
     while (true)
     {
@@ -73,26 +67,10 @@ void takeClient(int fd)
 
 int main(int argc, char *argv[])
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    asio::io_context context;
+    asio::ip::tcp::acceptor acceptor(context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 1234));
 
-    struct sockaddr_in sockadd;
-    memset(&sockadd, 0, sizeof(&sockadd));
-    sockadd.sin_family = AF_INET;
-    sockadd.sin_port = htons(1234);
-    sockadd.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if (bind(sockfd, (struct sockaddr *)&sockadd, sizeof(sockadd)) < 0)
-    {
-        std::cerr << "bind failed!" << std::endl;
-        return -1;
-    }
-    listen(sockfd, 10);
-
-    while (true)
-    {
-        int reqfd = accept(sockfd, NULL, NULL);
-        std::thread(takeClient, reqfd).detach();
-    }
+    asio::ip::tcp::socket socket(acceptor.accept());
 
     return 0;
 }

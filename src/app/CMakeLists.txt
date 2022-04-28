@@ -1,14 +1,14 @@
 
 set(SRC
-        main.cpp
-        )
+	test.cpp
+	)
 
 set(INC
-        )
+	)
 
 set(LIBS
-        database
-        )
+	network
+	)
 
 add_executable(${PROJECT_NAME} "${SRC};${INC}")
 target_link_libraries(${PROJECT_NAME} "${LIBS}")
