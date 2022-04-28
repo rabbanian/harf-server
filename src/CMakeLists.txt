@@ -1,7 +1,8 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_subdirectory(application)
+add_subdirectory(app)
 add_subdirectory(db)
-add_subdirectory(protobuf)
+add_subdirectory(proto)
 add_subdirectory(utils)
+add_subdirectory(net)

@@ -1,6 +1,5 @@
 set(PROTO_SRC
-	message.proto
-	header.proto
+	echo.proto
 	)
 
 protobuf_generate_cpp(SRC INC ${PROTO_SRC})

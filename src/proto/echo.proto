@@ -1,5 +1,5 @@
 syntax = "proto3";
-package harf;
+package proto;
 
 message Echo {
   string text = 1;
