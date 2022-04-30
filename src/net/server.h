@@ -6,14 +6,16 @@
 #include <memory>
 #include <unordered_set>
 
-#include "internal/connection.h"
+#include "connection_manager.h"
 #include "utils/queue.h"
 
 namespace net {
 
-class Server : public std::enable_shared_from_this<Server> {
+class Server : public std::enable_shared_from_this<Server>
+{
  public:
-  Server(asio::io_context& ioc, asio::ip::tcp::endpoint& endpoint);
+  Server(asio::io_context& ioc, asio::ip::tcp::endpoint& endpoint,
+         net::ConnectionManager& manager);
   void Run();
 
  private:
@@ -22,6 +24,7 @@ class Server : public std::enable_shared_from_this<Server> {
 
   asio::ip::tcp::socket asio_socket_;
   asio::ip::tcp::acceptor asio_acceptor_;
+  net::ConnectionManager& connection_manager_;
 };
 
 }  // namespace net
