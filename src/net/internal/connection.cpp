@@ -4,45 +4,80 @@
 #include <asio/write.hpp>
 #include <iostream>
 
-net::internal::Connection::Connection(asio::ip::tcp::socket socket)
-    : asio_socket_(std::move(socket)), buffer_(10) {}
+#include "net/connection_manager.h"
 
-void net::internal::Connection::Run() {
+net::internal::Connection::Connection(asio::ip::tcp::socket socket,
+                                      net::ConnectionManager &manager)
+    : asio_socket_(std::move(socket)), manager_(manager)
+{
+  manager_.Add(*this);
+}
+
+void net::internal::Connection::Run()
+{
   asio::async_read(
-      asio_socket_, asio::buffer(buffer_),
+      asio_socket_, packet_.GetHeader(),
       [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
-        self->OnRead(ec, bytes);
+        self->OnHeaderRead(ec, bytes);
       });
 }
 
-void net::internal::Connection::OnRead(std::error_code ec, std::size_t bytes) {
+void net::internal::Connection::OnHeaderRead(std::error_code ec,
+                                             std::size_t bytes)
+{
   if (ec) {
     OnError(ec);
     return;
   }
-  std::cout << "bytes read: " << bytes << std::endl;
-  for (auto c : buffer_) std::cout << c;
 
+  asio::async_read(
+      asio_socket_, packet_.GetBody(),
+      [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
+        self->OnBodyRead(ec, bytes);
+      });
+}
+
+void net::internal::Connection::OnBodyRead(std::error_code ec,
+                                           std::size_t bytes)
+{
+  if (ec) {
+    OnError(ec);
+    return;
+  }
+
+  manager_.GetQueue().Push(
+      std::make_pair(shared_from_this(), std::move(packet_)));
+  // TODO: What happens to the object life cycle?
+
+  asio::async_read(
+      asio_socket_, packet_.GetHeader(),
+      [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
+        self->OnHeaderRead(ec, bytes);
+      });
+}
+
+void net::internal::Connection::OnWrite(std::error_code ec, std::size_t bytes)
+{
+  if (ec) {
+    OnError(ec);
+    return;
+  }
+
+  // TODO: What should be done when OnWrite finishes?
+}
+
+void net::internal::Connection::OnError(std::error_code ec)
+{
+  std::cerr << "Connection Error: " << ec.message() << std::endl;
+}
+
+void net::internal::Connection::Send(net::Packet packet)
+{
   asio::async_write(
-      asio_socket_, asio::buffer(buffer_),
+      asio_socket_, packet.GetBuffer(),
       [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
         self->OnWrite(ec, bytes);
       });
 }
 
-void net::internal::Connection::OnWrite(std::error_code ec, std::size_t bytes) {
-  if (ec) {
-    OnError(ec);
-    return;
-  }
-
-  asio::async_read(
-      asio_socket_, asio::buffer(buffer_),
-      [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
-        self->OnRead(ec, bytes);
-      });
-}
-
-void net::internal::Connection::OnError(std::error_code ec) {
-  std::cerr << "Connection Error: " << ec.message() << std::endl;
-}
+net::internal::Connection::~Connection() { manager_.Remove(*this); }
