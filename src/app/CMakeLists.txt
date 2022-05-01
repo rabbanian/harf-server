@@ -1,6 +1,6 @@
 
 set(SRC
-	test.cpp
+	main.cpp
 	)
 
 set(INC
