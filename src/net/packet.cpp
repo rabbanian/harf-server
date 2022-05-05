@@ -35,7 +35,9 @@ asio::mutable_buffer net::Packet::GetBody()
   return asio::buffer(payload_);
 }
 
-std::vector<asio::const_buffer> net::Packet::GetBuffer()
+std::vector<asio::const_buffer> net::Packet::GetBuffer() const
 {
   return {asio::buffer(&header_, sizeof(header_)), asio::buffer(payload_)};
 }
+
+std::uint32_t net::Packet::GetType() const { return header_.type; }

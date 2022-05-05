@@ -3,11 +3,9 @@
 
 #include <google/protobuf/message.h>
 
-#include <array>
 #include <asio/buffer.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <span>
 #include <vector>
 
 namespace net {
@@ -20,13 +18,14 @@ class Packet
   Packet(const Packet& from) = default;
   Packet(Packet&& from) noexcept;
 
+  Packet& operator=(const Packet& from) = default;
   Packet& operator=(Packet&& from) noexcept;
-  Packet& operator=(Packet& from) = default;
 
   // TODO: replace Asio types with a more generic std types
   asio::mutable_buffer GetHeader();
   asio::mutable_buffer GetBody();
-  std::vector<asio::const_buffer> GetBuffer();
+  std::vector<asio::const_buffer> GetBuffer() const;
+  std::uint32_t GetType() const;
 
  private:
   struct Header
