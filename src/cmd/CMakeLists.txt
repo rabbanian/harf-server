@@ -1,16 +1,8 @@
-set(SRC
-	echo_command.cpp
-	)
-
 set(INC
-	echo_command.h
+	cmd_context.hpp
+	cmd_acceptor.hpp
 
-	internal/command.h
+	impl/cmd_context.hpp
 	)
 
-set(LIBS
-	network
-	)
-
-add_library(commands OBJECT "${SRC};${INC}")
-target_link_libraries(commands "${LIBS}")
+add_library(command INTERFACE "${INC}")
