@@ -8,7 +8,6 @@ set(INC
 
 set(LIBS
 	network
-	command
 	methods
 	)
 

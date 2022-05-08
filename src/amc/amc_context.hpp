@@ -1,19 +1,19 @@
-#ifndef HARF_SRC_CMD_CMD_CONTEXT_HPP_
-#define HARF_SRC_CMD_CMD_CONTEXT_HPP_
+#ifndef HARF_SRC_AMC_AMC_CONTEXT_HPP_
+#define HARF_SRC_AMC_AMC_CONTEXT_HPP_
 
 #include <asio/execution_context.hpp>
 
-namespace cmd {
+namespace amc {
 
-class cmd_context : public asio::execution_context
+class amc_context : public asio::execution_context
 {
  public:
   class executor;
   typedef executor executor_type;
 
-  cmd_context() {}
-  cmd_context(const cmd_context&) = delete;
-  cmd_context& operator=(const cmd_context&) = delete;
+  amc_context() {}
+  amc_context(const amc_context&) = delete;
+  amc_context& operator=(const amc_context&) = delete;
 
   executor get_executor() noexcept;
 
@@ -26,7 +26,7 @@ class cmd_context : public asio::execution_context
   void post_immediate_completion();
 };
 
-class cmd_context::executor
+class amc_context::executor
 {
  public:
   executor(const executor& from) noexcept : context_(from.context_) {}
@@ -42,7 +42,7 @@ class cmd_context::executor
   bool operator==(const executor& other) const { return true; }
   bool operator!=(const executor& other) const { return !(*this == other); }
 
-  cmd_context& context() const noexcept { return context_; }
+  amc_context& context() const noexcept { return context_; }
   void on_work_started() const noexcept {}
   void on_work_finished() const noexcept {}
 
@@ -56,15 +56,15 @@ class cmd_context::executor
   void defer(Function&& f, const OtherAllocator& a) const;
 
  private:
-  friend class cmd_context;
+  friend class amc_context;
 
-  explicit executor(cmd_context& cntx);
+  explicit executor(amc_context& cntx);
 
-  cmd_context& context_;
+  amc_context& context_;
 };
 
-}  // namespace cmd
+}  // namespace amc
 
-#include "impl/cmd_context.hpp"
+#include "impl/amc_context.hpp"
 
-#endif  // HARF_SRC_CMD_CMD_CONTEXT_HPP_
+#endif  // HARF_SRC_AMC_AMC_CONTEXT_HPP_

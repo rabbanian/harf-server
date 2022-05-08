@@ -2,7 +2,7 @@
 #include <asio/signal_set.hpp>
 #include <thread>
 
-#include "cmd/cmd_context.hpp"
+#include "amc/amc_context.hpp"
 #include "methods/server.h"
 #include "net/connection_manager.h"
 #include "net/server.h"
@@ -10,7 +10,7 @@
 int main()
 {
   asio::io_context ioc;
-  cmd::cmd_context cmdc;
+  amc::amc_context mcc;
 
   asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), 1234);
 
@@ -18,16 +18,16 @@ int main()
       queue;
   net::ConnectionManager manager(queue);
   std::make_shared<net::Server>(ioc, endpoint, manager)->Run();
-  std::make_shared<methods::Server>(cmdc, manager)->Run();
+  std::make_shared<methods::Server>(mcc, manager)->Run();
 
   asio::signal_set signals(ioc, SIGINT, SIGTERM);
-  signals.async_wait([&ioc, &cmdc](std::error_code const&, int) {
+  signals.async_wait([&ioc, &mcc](std::error_code const&, int) {
     ioc.stop();
-    cmdc.stop();
+    mcc.stop();
   });
 
   auto th = std::thread([&ioc]() { ioc.run(); });
-  cmdc.run();
+  mcc.run();
 
   th.join();
   return 0;

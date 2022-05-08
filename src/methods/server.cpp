@@ -2,14 +2,14 @@
 
 #include "echo.h"
 
-methods::Server::Server(cmd::cmd_context& exc, net::ConnectionManager& manager)
-    : cmd_context_(exc), cmd_acceptor_(exc)
+methods::Server::Server(amc::amc_context& exc, net::ConnectionManager& manager)
+    : amc_context_(exc), amc_acceptor_(exc)
 {
 }
 
 void methods::Server::Run()
 {
-  cmd_acceptor_.async_accept(
+  amc_acceptor_.async_accept(
       connection_, packet_,
       [self = shared_from_this()]() { self->OnPacket(); });
 }
@@ -20,7 +20,7 @@ void methods::Server::OnPacket()
     std::make_shared<methods::Echo>(connection_, std::move(packet_))->Run();
   }
 
-  cmd_acceptor_.async_accept(
+  amc_acceptor_.async_accept(
       connection_, packet_,
       [self = shared_from_this()]() { self->OnPacket(); });
 }
