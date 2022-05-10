@@ -4,28 +4,26 @@
 #include <memory>
 #include <unordered_set>
 
+#include "amc/amc_context.hpp"
+#include "amc/caller.hpp"
 #include "net/internal/connection.h"
 #include "net/packet.h"
-#include "utils/queue.h"
 
 namespace net {
 
 class ConnectionManager
 {
  public:
-  explicit ConnectionManager(
-      utils::Queue<std::pair<std::weak_ptr<net::internal::Connection>,
-                             net::Packet>> &queue);
-  utils::Queue<std::pair<std::weak_ptr<net::internal::Connection>, net::Packet>>
-      &GetQueue();
+  explicit ConnectionManager(amc::amc_context &ctx);
   void Add(net::internal::Connection &con);
   void Remove(net::internal::Connection &con);
   void SendToAll(const net::Packet &packet) const;
+  void CallMethod(std::weak_ptr<net::internal::Connection> &&c,
+                  net::Packet &&p);
 
  private:
   std::unordered_set<net::internal::Connection *> connections_;
-  utils::Queue<std::pair<std::weak_ptr<net::internal::Connection>, net::Packet>>
-      &queue_;
+  amc::caller amc_caller_;
 };
 
 }  // namespace net

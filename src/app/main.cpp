@@ -14,9 +14,7 @@ int main()
 
   asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), 1234);
 
-  utils::Queue<std::pair<std::weak_ptr<net::internal::Connection>, net::Packet>>
-      queue;
-  net::ConnectionManager manager(queue);
+  net::ConnectionManager manager(mcc);
   std::make_shared<net::Server>(ioc, endpoint, manager)->Run();
   std::make_shared<methods::Server>(mcc, manager)->Run();
 

@@ -45,8 +45,7 @@ void net::internal::Connection::OnBodyRead(std::error_code ec,
     return;
   }
 
-  manager_.GetQueue().Push(
-      std::make_pair(shared_from_this(), std::move(packet_)));
+  manager_.CallMethod(shared_from_this(), std::move(packet_));
   // TODO: What happens to the object life cycle?
 
   asio::async_read(

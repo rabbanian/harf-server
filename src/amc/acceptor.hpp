@@ -15,9 +15,9 @@ class acceptor
   acceptor& operator=(const acceptor&) = delete;
 
   template <typename Connection, typename Packet, typename AcceptHandler>
-  auto async_accept(Connection c, Packet p, AcceptHandler&& handler);
+  auto async_accept(Connection& c, Packet& p, AcceptHandler&& handler);
 
-  executor_type get_executor() noexcept;
+  executor_type get_executor() const noexcept;
 
  private:
   class initiate_async_accept;
@@ -35,10 +35,12 @@ class acceptor::initiate_async_accept
   executor_type get_executor() const noexcept { return self_.get_executor(); }
 
   template <typename AcceptHandler, typename Connection, typename Packet>
-  void operator()(AcceptHandler&& handler, Connection c, Packet p) const
+  void operator()(AcceptHandler&& handler, Connection& c, Packet& p)
   {
     // FIXME: check the type requirement for the AcceptHandler
     // FIXME: convert handler to a non-const-lvalue type first
+    amc_context::ref_operation op = {handler, c, p};
+    self_.context_.post_accept(op);
   }
 
  private:

@@ -2,8 +2,8 @@
 
 #include "echo.h"
 
-methods::Server::Server(amc::amc_context& exc, net::ConnectionManager& manager)
-    : amc_context_(exc), amc_acceptor_(exc)
+methods::Server::Server(amc::amc_context& ctx, net::ConnectionManager& manager)
+    : amc_acceptor_(ctx)
 {
 }
 

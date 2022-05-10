@@ -12,14 +12,13 @@ namespace methods {
 class Server : public std::enable_shared_from_this<Server>
 {
  public:
-  Server(amc::amc_context& cntx, net::ConnectionManager& manager);
+  Server(amc::amc_context& ctx, net::ConnectionManager& manager);
   void Run();
 
  private:
   void OnPacket();
   void OnError(std::error_code ec);
 
-  amc::amc_context& amc_context_;
   amc::acceptor amc_acceptor_;
   net::Packet packet_;
   std::weak_ptr<net::internal::Connection> connection_;

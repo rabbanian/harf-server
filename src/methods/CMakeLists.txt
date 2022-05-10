@@ -10,7 +10,6 @@ set(INC
 
 set(LIBS
 	network
-	command
 	)
 
 add_library(methods OBJECT "${SRC};${INC}")
