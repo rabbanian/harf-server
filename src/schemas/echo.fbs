@@ -1,0 +1,7 @@
+namespace schemas;
+
+table Echo {
+  text: string;
+}
+
+root_type Echo;

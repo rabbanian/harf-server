@@ -15,7 +15,6 @@ set(INC
 	)
 
 set(LIBS
-	protobuf
 	)
 
 add_library(network "${SRC};${INC}")

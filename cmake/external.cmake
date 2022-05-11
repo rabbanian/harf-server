@@ -1,1 +1,1 @@
-find_package(Protobuf REQUIRED)
+find_package(FlatBuffers REQUIRED)

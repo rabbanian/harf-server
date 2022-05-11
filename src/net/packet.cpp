@@ -1,12 +1,9 @@
 #include "packet.h"
 
-net::Packet::Packet(const google::protobuf::Message *message)
+net::Packet::Packet(std::uint8_t *data, std::uint32_t size)
 {
-  auto size = message->ByteSizeLong();
   header_.size = size;
   header_.type = 0x00'00'00'00;
-  payload_.resize(size);
-  message->SerializeWithCachedSizesToArray(payload_.data());
 }
 
 net::Packet::Packet(net::Packet &&from) noexcept : Packet()

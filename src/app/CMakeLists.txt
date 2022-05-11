@@ -9,6 +9,7 @@ set(INC
 set(LIBS
 	network
 	methods
+	schemas
 	)
 
 add_executable(${PROJECT_NAME} "${SRC};${INC}")

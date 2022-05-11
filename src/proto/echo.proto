@@ -1,6 +1,0 @@
-syntax = "proto3";
-package proto;
-
-message Echo {
-  string text = 1;
-}

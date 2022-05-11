@@ -1,8 +1,6 @@
 #ifndef HARF_SRC_NET_INTERNAL_PACKET_H_
 #define HARF_SRC_NET_INTERNAL_PACKET_H_
 
-#include <google/protobuf/message.h>
-
 #include <asio/buffer.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -14,7 +12,7 @@ class Packet
 {
  public:
   Packet() = default;
-  explicit Packet(const google::protobuf::Message* message);
+  explicit Packet(std::uint8_t* data, std::uint32_t size);
   Packet(const Packet& from) = default;
   Packet(Packet&& from) noexcept;
 
