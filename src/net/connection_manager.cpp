@@ -15,13 +15,6 @@ void net::ConnectionManager::Remove(net::internal::Connection& con)
   connections_.erase(&con);
 }
 
-void net::ConnectionManager::SendToAll(const net::Packet& packet) const
-{
-  for (auto con : connections_) {
-    con->Send(packet);
-  }
-}
-
 void net::ConnectionManager::CallMethod(
     std::weak_ptr<net::internal::Connection>&& c, net::Packet&& p)
 {

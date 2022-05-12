@@ -17,7 +17,6 @@ class ConnectionManager
   explicit ConnectionManager(amc::amc_context &ctx);
   void Add(net::internal::Connection &con);
   void Remove(net::internal::Connection &con);
-  void SendToAll(const net::Packet &packet) const;
   void CallMethod(std::weak_ptr<net::internal::Connection> &&c,
                   net::Packet &&p);
 

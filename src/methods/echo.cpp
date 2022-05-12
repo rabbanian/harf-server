@@ -10,6 +10,6 @@ void methods::Echo::Run()
 {
   if (!connection_.expired()) {
     auto sp = connection_.lock();
-    sp->Send(packet_);
+    sp->Send(std::move(packet_));
   }
 }

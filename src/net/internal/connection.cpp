@@ -16,7 +16,7 @@ net::internal::Connection::Connection(asio::ip::tcp::socket socket,
 void net::internal::Connection::Run()
 {
   asio::async_read(
-      asio_socket_, packet_.GetHeader(),
+      asio_socket_, read_packet_.GetHeader(),
       [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
         self->OnHeaderRead(ec, bytes);
       });
@@ -31,7 +31,7 @@ void net::internal::Connection::OnHeaderRead(std::error_code ec,
   }
 
   asio::async_read(
-      asio_socket_, packet_.GetBody(),
+      asio_socket_, read_packet_.GetBody(),
       [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
         self->OnBodyRead(ec, bytes);
       });
@@ -45,11 +45,11 @@ void net::internal::Connection::OnBodyRead(std::error_code ec,
     return;
   }
 
-  manager_.CallMethod(shared_from_this(), std::move(packet_));
+  manager_.CallMethod(shared_from_this(), std::move(read_packet_));
   // TODO: What happens to the object life cycle?
 
   asio::async_read(
-      asio_socket_, packet_.GetHeader(),
+      asio_socket_, read_packet_.GetHeader(),
       [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
         self->OnHeaderRead(ec, bytes);
       });
@@ -62,7 +62,15 @@ void net::internal::Connection::OnWrite(std::error_code ec, std::size_t bytes)
     return;
   }
 
-  // TODO: What should be done when OnWrite finishes?
+  std::lock_guard lock(mx_);
+  write_packets_.pop();
+  if (write_packets_.empty()) return;
+
+  asio::async_write(
+      asio_socket_, write_packets_.front().GetBuffer(),
+      [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
+        self->OnWrite(ec, bytes);
+      });
 }
 
 void net::internal::Connection::OnError(std::error_code ec)
@@ -72,8 +80,12 @@ void net::internal::Connection::OnError(std::error_code ec)
 
 void net::internal::Connection::Send(net::Packet packet)
 {
+  std::lock_guard lock(mx_);
+  write_packets_.emplace(std::move(packet));
+  if (write_packets_.size() > 1) return;
+
   asio::async_write(
-      asio_socket_, packet.GetBuffer(),
+      asio_socket_, write_packets_.front().GetBuffer(),
       [self = shared_from_this()](std::error_code ec, std::size_t bytes) {
         self->OnWrite(ec, bytes);
       });

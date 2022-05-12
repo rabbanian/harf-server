@@ -3,6 +3,7 @@
 
 #include <asio/ip/tcp.hpp>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "net/packet.h"
@@ -27,8 +28,10 @@ class Connection : public std::enable_shared_from_this<Connection>
   void OnWrite(std::error_code ec, std::size_t bytes);
 
   asio::ip::tcp::socket asio_socket_;
-  net::Packet packet_;
+  net::Packet read_packet_;
+  std::queue<net::Packet> write_packets_;
   net::ConnectionManager &manager_;
+  std::mutex mx_;
 };
 
 }  // namespace internal
