@@ -1,8 +1,9 @@
 #include "packet.h"
 
-net::Packet::Packet(std::uint8_t *data, std::uint32_t size)
+net::Packet::Packet(flatbuffers::DetachedBuffer from)
+    : payload_(std::move(from))
 {
-  header_.size = size;
+  header_.size = from.size();
   header_.type = 0x00'00'00'00;
 }
 
@@ -28,13 +29,13 @@ asio::mutable_buffer net::Packet::GetHeader()
 
 asio::mutable_buffer net::Packet::GetBody()
 {
-  payload_.resize(header_.size);
-  return asio::buffer(payload_);
+  return asio::buffer(payload_.data(), payload_.size());
 }
 
-std::vector<asio::const_buffer> net::Packet::GetBuffer() const
+std::array<asio::const_buffer, 2> net::Packet::GetBuffer() const
 {
-  return {asio::buffer(&header_, sizeof(header_)), asio::buffer(payload_)};
+  return {asio::buffer(&header_, sizeof(header_)),
+          asio::buffer(payload_.data(), payload_.size())};
 }
 
 std::uint32_t net::Packet::GetType() const { return header_.type; }

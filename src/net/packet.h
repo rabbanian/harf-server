@@ -1,10 +1,12 @@
 #ifndef HARF_SRC_NET_INTERNAL_PACKET_H_
 #define HARF_SRC_NET_INTERNAL_PACKET_H_
 
+#include <flatbuffers/detached_buffer.h>
+
+#include <array>
 #include <asio/buffer.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 
 namespace net {
 
@@ -12,17 +14,17 @@ class Packet
 {
  public:
   Packet() = default;
-  explicit Packet(std::uint8_t* data, std::uint32_t size);
-  Packet(const Packet& from) = default;
+  explicit Packet(flatbuffers::DetachedBuffer from);
+  Packet(const Packet& from) = delete;
   Packet(Packet&& from) noexcept;
 
-  Packet& operator=(const Packet& from) = default;
+  Packet& operator=(const Packet& from) = delete;
   Packet& operator=(Packet&& from) noexcept;
 
   // TODO: replace Asio types with a more generic std types
   asio::mutable_buffer GetHeader();
   asio::mutable_buffer GetBody();
-  std::vector<asio::const_buffer> GetBuffer() const;
+  std::array<asio::const_buffer, 2> GetBuffer() const;
   std::uint32_t GetType() const;
 
  private:
@@ -31,7 +33,7 @@ class Packet
     std::uint32_t size;
     std::uint32_t type;
   } header_ = {};
-  std::vector<std::uint8_t> payload_;
+  flatbuffers::DetachedBuffer payload_;
 };
 
 }  // namespace net
